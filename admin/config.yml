@@ -1,0 +1,43 @@
+backend:
+  name: git-gateway
+  branch: main
+
+locale: 'pt'
+
+# Uploads vão para a pasta /fotos no repositório
+media_folder: "fotos"
+public_folder: "fotos"
+
+collections:
+  - name: "portfolio"
+    label: "📸 Portfolio"
+    files:
+      - label: "Gerenciar Portfolio"
+        name: "items"
+        file: "portfolio.json"
+        fields:
+          - label: "Itens"
+            name: "items"
+            widget: "list"
+            summary: "{{fields.categoria}} — {{fields.s}}"
+            fields:
+              - label: "Arquivo (foto ou vídeo)"
+                name: "s"
+                widget: "file"
+                hint: "Envie uma imagem (jpg, webp) ou vídeo (mp4)"
+
+              - label: "Categoria"
+                name: "categoria"
+                widget: "select"
+                options:
+                  - { label: "🖤 Preto e Cinza", value: "pretoecinza" }
+                  - { label: "✒️ Fine Line",      value: "fineline"    }
+                  - { label: "🎨 Colorido",        value: "colorido"   }
+                  - { label: "🏷️ Comercial",       value: "comercial"  }
+
+              - label: "Tipo"
+                name: "t"
+                widget: "select"
+                options:
+                  - { label: "Imagem (foto/webp)", value: "i" }
+                  - { label: "Vídeo (mp4)",        value: "v" }

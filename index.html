@@ -9,6 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <!-- Netlify Identity — necessário para o painel CMS funcionar -->
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 </head>
 <body>
 
@@ -587,5 +589,17 @@
   </div>
 
   <script src="script.js"></script>
+  <!-- Redireciona para /admin após login pelo Netlify Identity -->
+  <script>
+    if (window.netlifyIdentity) {
+      window.netlifyIdentity.on('init', function(user) {
+        if (!user) {
+          window.netlifyIdentity.on('login', function() {
+            document.location.href = '/admin/';
+          });
+        }
+      });
+    }
+  </script>
 </body>
 </html>

@@ -19,48 +19,13 @@ navLinks.querySelectorAll('a').forEach(link => {
 });
 
 // ===== PORTFOLIO 3×3 CYCLING =====
-const PORTFOLIO_MEDIA = {
-  pretoecinza: [
-    { t:'v', s:'black_and_grey_1.mp4',  label:'Preto e Cinza' },
-    { t:'v', s:'black_and_grey_2.mp4',  label:'Preto e Cinza' },
-    { t:'v', s:'black_and_grey_3.mp4',  label:'Preto e Cinza' },
-    { t:'v', s:'black_and_grey_4.mp4',  label:'Preto e Cinza' },
-    { t:'v', s:'black_and_grey_5.mp4',  label:'Preto e Cinza' },
-    { t:'v', s:'black_and_grey_6.mp4',  label:'Preto e Cinza' },
-    { t:'v', s:'black_and_grey_7.mp4',  label:'Preto e Cinza' },
-    { t:'v', s:'black_and_grey_8.mp4',  label:'Preto e Cinza' },
-    { t:'v', s:'black_and_grey_9.mp4',  label:'Preto e Cinza' },
-    { t:'v', s:'black_and_grey_10.mp4', label:'Preto e Cinza' },
-    { t:'i', s:'black_and_grey_11.jpg', label:'Preto e Cinza' },
-    { t:'i', s:'black_and_grey_12.jpg', label:'Preto e Cinza' },
-    { t:'i', s:'black_and_grey_13.jpg', label:'Preto e Cinza' },
-  ],
-  fineline: [
-    { t:'i', s:'fineline_1.jpg',  label:'Fine Line' },
-    { t:'i', s:'fineline_2.jpg',  label:'Fine Line' },
-    { t:'i', s:'fineline_3.jpg',  label:'Fine Line' },
-    { t:'i', s:'fineline_4.webp', label:'Fine Line' },
-  ],
-  colorido: [
-    { t:'i', s:'colorida_1.jpg',  label:'Colorido' },
-    { t:'v', s:'colorida_2.mp4',  label:'Colorido' },
-    { t:'v', s:'colorida_3.mp4',  label:'Colorido' },
-    { t:'v', s:'colorida_4.mp4',  label:'Colorido' },
-    { t:'v', s:'colorida_5.mp4',  label:'Colorido' },
-    { t:'v', s:'colorida_6.mp4',  label:'Colorido' },
-  ],
-  comercial: [
-    { t:'i', s:'comercial_1.jpg',  label:'Comercial' },
-    { t:'i', s:'comercial_2.jpg',  label:'Comercial' },
-    { t:'i', s:'comercial_3.jpg',  label:'Comercial' },
-    { t:'i', s:'comercial_4.jpg',  label:'Comercial' },
-    { t:'i', s:'comercial_5.jpg',  label:'Comercial' },
-    { t:'i', s:'comercial_6.jpg',  label:'Comercial' },
-    { t:'v', s:'comercial_7.mp4',  label:'Comercial' },
-    { t:'v', s:'comercial_8.mp4',  label:'Comercial' },
-    { t:'v', s:'comercial_9.mp4',  label:'Comercial' },
-    { t:'i', s:'comercial_10.webp',label:'Comercial' },
-  ],
+
+// Rótulos por categoria
+const CATEGORY_LABELS = {
+  pretoecinza: 'Preto e Cinza',
+  fineline:    'Fine Line',
+  colorido:    'Colorido',
+  comercial:   'Comercial',
 };
 
 // Posições 1,3,5,7,9 no grid (índice 0-based: 0,2,4,6,8) → VÍDEO
@@ -76,127 +41,151 @@ let ptTimer    = null;
 let imgIndices = [0, 1, 2, 3];    // 4 img cells
 let vidIndices = [0, 1, 2, 3, 4]; // 5 vid cells
 
-// Pool all = intercala categorias para variedade
-const allMedia = Object.values(PORTFOLIO_MEDIA).flat();
-
-function buildPools(filter) {
-  const src  = (filter === 'all') ? allMedia : (PORTFOLIO_MEDIA[filter] || allMedia);
-  const imgs = src.filter(m => m.t === 'i');
-  const vids = src.filter(m => m.t === 'v');
-  return {
-    imgs: imgs.length ? imgs : allMedia.filter(m => m.t === 'i'),
-    vids: vids.length ? vids : allMedia.filter(m => m.t === 'v'),
-  };
-}
-
-function createMediaEl(item) {
-  let el;
-  if (item.t === 'v') {
-    el = document.createElement('video');
-    el.src         = item.s;
-    el.autoplay    = true;
-    el.muted       = true;
-    el.loop        = true;
-    el.playsInline = true;
-  } else {
-    el = document.createElement('img');
-    el.src = item.s;
-    el.alt = item.label || '';
+// Carrega portfolio.json e inicializa o portfólio
+async function loadPortfolio() {
+  let data;
+  try {
+    const res = await fetch('portfolio.json');
+    data = await res.json();
+  } catch (e) {
+    console.warn('portfolio.json não encontrado, usando fallback vazio.', e);
+    data = { items: [] };
   }
-  el.className = 'portfolio-media';
-  return el;
-}
 
-function swapCell(cell, item) {
-  const oldEl = cell.querySelector('.portfolio-media');
-  const newEl = createMediaEl(item);
-  newEl.style.opacity    = '0';
-  newEl.style.transition = 'none';
-  cell.insertBefore(newEl, cell.querySelector('.portfolio-overlay'));
-  const tag = cell.querySelector('.portfolio-tag');
-  if (tag) tag.textContent = item.label || '';
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    newEl.style.transition = 'opacity 2s ease';
-    newEl.style.opacity    = '1';
-    if (oldEl) {
-      oldEl.style.transition = 'opacity 2s ease';
-      oldEl.style.opacity    = '0';
-      setTimeout(() => oldEl.remove(), 2100);
-    }
-  }));
-}
+  // Constrói PORTFOLIO_MEDIA agrupado por categoria
+  const PORTFOLIO_MEDIA = { pretoecinza: [], fineline: [], colorido: [], comercial: [] };
+  data.items.forEach(item => {
+    const cat = item.categoria;
+    item.label = CATEGORY_LABELS[cat] || cat;
+    // Normaliza path: se CMS salvar com prefixo "fotos/" remove para src relativo
+    item.s = item.s.replace(/^\/?(fotos\/)/i, 'fotos/');
+    if (PORTFOLIO_MEDIA[cat]) PORTFOLIO_MEDIA[cat].push(item);
+  });
 
-// Reconstrói o grid 3×3 com 9 células fixas
-function restoreGrid() {
-  ptGrid.innerHTML = '';
-  ptGrid.className = 'portfolio-grid';
-  for (let i = 0; i < 9; i++) {
-    const cell = document.createElement('div');
-    cell.className = 'portfolio-cell';
-    cell.innerHTML = '<div class="portfolio-overlay"><span class="portfolio-tag"></span></div>';
-    ptGrid.appendChild(cell);
+  // Pool geral intercalando categorias
+  const allMedia = Object.values(PORTFOLIO_MEDIA).flat();
+
+  function buildPools(filter) {
+    const src  = (filter === 'all') ? allMedia : (PORTFOLIO_MEDIA[filter] || allMedia);
+    const imgs = src.filter(m => m.t === 'i');
+    const vids = src.filter(m => m.t === 'v');
+    return {
+      imgs: imgs.length ? imgs : allMedia.filter(m => m.t === 'i'),
+      vids: vids.length ? vids : allMedia.filter(m => m.t === 'v'),
+    };
   }
-  ptCells = [...ptGrid.querySelectorAll('.portfolio-cell')];
-}
 
-function swapAll(imgs, vids) {
-  let ic = 0, vc = 0;
-  ptCells.forEach((cell, i) => {
-    if (VID_CELLS.has(i)) {
-      swapCell(cell, vids[vidIndices[vc] % vids.length]);
-      vidIndices[vc] = (vidIndices[vc] + 1) % vids.length;
-      vc++;
+  function createMediaEl(item) {
+    let el;
+    if (item.t === 'v') {
+      el = document.createElement('video');
+      el.src         = item.s;
+      el.autoplay    = true;
+      el.muted       = true;
+      el.loop        = true;
+      el.playsInline = true;
     } else {
-      swapCell(cell, imgs[imgIndices[ic] % imgs.length]);
-      imgIndices[ic] = (imgIndices[ic] + 1) % imgs.length;
-      ic++;
+      el = document.createElement('img');
+      el.src = item.s;
+      el.alt = item.label || '';
     }
+    el.className = 'portfolio-media';
+    return el;
+  }
+
+  function swapCell(cell, item) {
+    const oldEl = cell.querySelector('.portfolio-media');
+    const newEl = createMediaEl(item);
+    newEl.style.opacity    = '0';
+    newEl.style.transition = 'none';
+    cell.insertBefore(newEl, cell.querySelector('.portfolio-overlay'));
+    const tag = cell.querySelector('.portfolio-tag');
+    if (tag) tag.textContent = item.label || '';
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      newEl.style.transition = 'opacity 2s ease';
+      newEl.style.opacity    = '1';
+      if (oldEl) {
+        oldEl.style.transition = 'opacity 2s ease';
+        oldEl.style.opacity    = '0';
+        setTimeout(() => oldEl.remove(), 2100);
+      }
+    }));
+  }
+
+  // Reconstrói o grid 3×3 com 9 células fixas
+  function restoreGrid() {
+    ptGrid.innerHTML = '';
+    ptGrid.className = 'portfolio-grid';
+    for (let i = 0; i < 9; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'portfolio-cell';
+      cell.innerHTML = '<div class="portfolio-overlay"><span class="portfolio-tag"></span></div>';
+      ptGrid.appendChild(cell);
+    }
+    ptCells = [...ptGrid.querySelectorAll('.portfolio-cell')];
+  }
+
+  function swapAll(imgs, vids) {
+    let ic = 0, vc = 0;
+    ptCells.forEach((cell, i) => {
+      if (VID_CELLS.has(i)) {
+        swapCell(cell, vids[vidIndices[vc] % vids.length]);
+        vidIndices[vc] = (vidIndices[vc] + 1) % vids.length;
+        vc++;
+      } else {
+        swapCell(cell, imgs[imgIndices[ic] % imgs.length]);
+        imgIndices[ic] = (imgIndices[ic] + 1) % imgs.length;
+        ic++;
+      }
+    });
+  }
+
+  // Modo "Todos" — grid 3×3 com cycling
+  function startCycling() {
+    clearInterval(ptTimer);
+    restoreGrid();
+    const { imgs, vids } = buildPools('all');
+    imgIndices = [0,1,2,3].map((_, i) => i % imgs.length);
+    vidIndices = [0,1,2,3,4].map((_, i) => i % vids.length);
+    swapAll(imgs, vids);
+    ptTimer = setInterval(() => swapAll(imgs, vids), SWAP_MS);
+  }
+
+  // Modo filtro — mostra TODOS os itens da categoria, sem cycling
+  function showFiltered(filter) {
+    clearInterval(ptTimer);
+    const items = PORTFOLIO_MEDIA[filter] || [];
+    ptGrid.innerHTML = '';
+    ptGrid.className = 'portfolio-grid portfolio-grid--list';
+    items.forEach(item => {
+      const cell = document.createElement('div');
+      cell.className = 'portfolio-cell';
+      const el = createMediaEl(item);
+      cell.appendChild(el);
+      const overlay = document.createElement('div');
+      overlay.className = 'portfolio-overlay';
+      overlay.innerHTML = `<span class="portfolio-tag">${item.label || ''}</span>`;
+      cell.appendChild(overlay);
+      ptGrid.appendChild(cell);
+    });
+  }
+
+  // Botões de filtro
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const f = btn.dataset.filter;
+      if (f === 'all') startCycling();
+      else showFiltered(f);
+    });
   });
+
+  // Inicia
+  startCycling();
 }
 
-// Modo "Todos" — grid 3×3 com cycling
-function startCycling() {
-  clearInterval(ptTimer);
-  restoreGrid();
-  const { imgs, vids } = buildPools('all');
-  imgIndices = [0,1,2,3].map((_, i) => i % imgs.length);
-  vidIndices = [0,1,2,3,4].map((_, i) => i % vids.length);
-  swapAll(imgs, vids);
-  ptTimer = setInterval(() => swapAll(imgs, vids), SWAP_MS);
-}
-
-// Modo filtro — mostra TODOS os itens da categoria, sem cycling
-function showFiltered(filter) {
-  clearInterval(ptTimer);
-  const items = PORTFOLIO_MEDIA[filter] || [];
-  ptGrid.innerHTML = '';
-  ptGrid.className = 'portfolio-grid portfolio-grid--list';
-  items.forEach(item => {
-    const cell = document.createElement('div');
-    cell.className = 'portfolio-cell';
-    const el = createMediaEl(item);
-    cell.appendChild(el);
-    const overlay = document.createElement('div');
-    overlay.className = 'portfolio-overlay';
-    overlay.innerHTML = `<span class="portfolio-tag">${item.label || ''}</span>`;
-    cell.appendChild(overlay);
-    ptGrid.appendChild(cell);
-  });
-}
-
-// Botões de filtro
-document.querySelectorAll('.filter-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const f = btn.dataset.filter;
-    if (f === 'all') startCycling();
-    else showFiltered(f);
-  });
-});
-
-// Inicia
-startCycling();
+loadPortfolio();
 
 // ===== SHOW TATTOO EXTRA FIELD =====
 const servicoSelect = document.getElementById('servico');

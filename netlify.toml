@@ -1,0 +1,9 @@
+[build]
+  publish = "."
+
+# necessário para o Decap CMS funcionar com Git Gateway
+[[headers]]
+  for = "/admin/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
