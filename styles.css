@@ -911,7 +911,8 @@ h1, h2, h3, h4 { font-family: 'Cinzel', serif; line-height: 1.15; }
 }
 
 @media (max-width: 768px) {
-  .section { padding: 72px 0; }
+  .section { padding: 64px 0; }
+  .section-header { margin-bottom: 40px; }
 
   .nav-toggle { display: flex; }
   .nav-links {
@@ -931,21 +932,51 @@ h1, h2, h3, h4 { font-family: 'Cinzel', serif; line-height: 1.15; }
 
   .hero-actions { flex-direction: column; align-items: center; }
 
-  .services-grid { grid-template-columns: repeat(2, 1fr); }
+  /* serviços: 1 coluna a partir de 768 */
+  .services-grid { grid-template-columns: 1fr; }
+
+  /* sobre: empilha e centraliza */
   .sobre-grid { grid-template-columns: 1fr; }
+  .sobre-content .section-title { text-align: center; }
+  .sobre-content .section-tag { display: block; text-align: center; }
+  .sobre-text { text-align: center; }
+  .stats-row { justify-content: center; gap: 20px; }
+  .stat-num { font-size: 1.6rem; }
+  .sobre-logo-frame { min-height: 280px; }
+  .sobre-logo-img { max-width: 260px; }
+
+  /* antes/depois: empilha pares */
+  .ba-pair { grid-template-columns: 1fr; }
+
+  /* portfolio filtros: centraliza */
+  .portfolio-filters { justify-content: center; }
+
   .agendamento-grid { grid-template-columns: 1fr; }
   .form-row { grid-template-columns: 1fr; }
   .footer-grid { grid-template-columns: 1fr; gap: 32px; }
   .footer-bottom { flex-direction: column; text-align: center; }
-
-  .stats-row { gap: 20px; }
-  .stat-num { font-size: 1.6rem; }
+  .footer-brand { text-align: center; }
+  .footer-socials { justify-content: center; }
 }
 
 @media (max-width: 480px) {
   .portfolio-grid { grid-template-columns: repeat(2, 1fr); gap: 4px; }
   .testimonials-grid { grid-template-columns: 1fr; }
   .faq-grid { grid-template-columns: 1fr; }
-  .agendamento-form { padding: 24px 20px; }
+  .agendamento-form { padding: 24px 16px; }
   .services-grid { grid-template-columns: 1fr; }
+
+  /* hero mais compacto */
+  .hero-title { font-size: clamp(2.2rem, 12vw, 3.5rem); }
+  .hero-badges { justify-content: center; }
+
+  /* solidária: wrap centralizado */
+  .solidaria-items { justify-content: center; }
+
+  /* WA float: afasta um pouco mais da borda */
+  .wa-float-wrap { bottom: 20px; right: 16px; }
+  .wa-menu { width: 240px; }
+
+  /* footer: links centralizados */
+  .footer-links { text-align: center; }
 }
