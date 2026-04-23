@@ -1,12 +1,671 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Old Art Studio — Painel Admin</title>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Painel — Old Art Studio</title>
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --gold:       #c8a45a;
+      --gold-light: #e0c070;
+      --dark:       #080808;
+      --dark2:      #111111;
+      --dark3:      #191919;
+      --dark4:      #242424;
+      --dark5:      #2e2e2e;
+      --text:       #e8e0d0;
+      --muted:      #777;
+      --red:        #c0392b;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--dark);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 14px;
+      min-height: 100vh;
+    }
+
+    /* ── Loading ── */
+    #loading {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 18px; background: var(--dark); z-index: 999;
+    }
+    .spinner {
+      width: 42px; height: 42px;
+      border: 3px solid var(--dark5);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin .75s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Header ── */
+    header {
+      position: sticky; top: 0; z-index: 90;
+      background: var(--dark2);
+      border-bottom: 1px solid rgba(200,164,90,.18);
+      height: 58px;
+      display: flex; align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+    }
+    .h-logo {
+      font-family: 'Cinzel', serif;
+      font-size: .95rem; letter-spacing: 3px; font-weight: 700;
+    }
+    .h-logo em { color: var(--gold); font-style: normal; }
+    .h-logo span { color: var(--muted); font-size: .7rem; font-weight: 400; letter-spacing: 2px; }
+    .h-right { display: flex; align-items: center; gap: 14px; }
+    .h-email { font-size: .75rem; color: var(--muted); }
+    .btn-sm {
+      background: transparent;
+      border: 1px solid var(--dark5);
+      color: var(--muted);
+      padding: 5px 14px; border-radius: 6px;
+      cursor: pointer; font-size: .75rem;
+      transition: .15s;
+    }
+    .btn-sm:hover { border-color: var(--gold); color: var(--gold); }
+
+    /* ── Layout ── */
+    #app { display: none; }
+    main { max-width: 1120px; margin: 0 auto; padding: 36px 24px 80px; }
+
+    /* ── Section headings ── */
+    .sec-head {
+      display: flex; align-items: center; gap: 12px;
+      font-family: 'Cinzel', serif;
+      font-size: .8rem; letter-spacing: 3px; color: var(--gold);
+      text-transform: uppercase; margin-bottom: 20px;
+    }
+    .sec-head::after {
+      content: ''; flex: 1; height: 1px;
+      background: rgba(200,164,90,.15);
+    }
+
+    /* ── Upload zone ── */
+    .upload-wrap { margin-bottom: 12px; }
+    .drop-zone {
+      border: 2px dashed rgba(200,164,90,.3);
+      border-radius: 16px;
+      padding: 44px 20px;
+      text-align: center;
+      cursor: pointer;
+      background: var(--dark2);
+      transition: .2s;
+    }
+    .drop-zone:hover, .drop-zone.over {
+      border-color: var(--gold);
+      background: rgba(200,164,90,.04);
+    }
+    .drop-icon { font-size: 2.4rem; line-height: 1; margin-bottom: 12px; }
+    .drop-zone h3 { font-size: .95rem; font-weight: 500; margin-bottom: 6px; }
+    .drop-zone p  { font-size: .78rem; color: var(--muted); }
+    #fileInput { display: none; }
+
+    /* ── Queue ── */
+    #queue {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .q-card {
+      background: var(--dark3);
+      border: 1px solid var(--dark5);
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+    .q-thumb {
+      width: 100%; aspect-ratio: 4/5;
+      object-fit: cover; display: block;
+      background: var(--dark4);
+    }
+    .q-body { padding: 8px 10px 10px; }
+    .q-name {
+      font-size: .68rem; color: var(--muted);
+      white-space: nowrap; overflow: hidden;
+      text-overflow: ellipsis; margin-bottom: 8px;
+    }
+    .q-select {
+      width: 100%;
+      background: var(--dark5);
+      border: 1px solid rgba(200,164,90,.2);
+      color: var(--text);
+      padding: 5px 7px; border-radius: 6px;
+      font-size: .75rem; cursor: pointer;
+      font-family: inherit;
+    }
+    .q-rm {
+      position: absolute; top: 7px; right: 7px;
+      background: rgba(0,0,0,.65); border: none;
+      color: #fff; width: 22px; height: 22px;
+      border-radius: 50%; cursor: pointer;
+      font-size: 13px; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s;
+    }
+    .q-rm:hover { background: var(--red); }
+
+    /* ── Publish bar ── */
+    .pub-bar {
+      display: flex; align-items: center;
+      justify-content: space-between; gap: 16px;
+      background: var(--dark3);
+      border: 1px solid rgba(200,164,90,.15);
+      border-radius: 12px;
+      padding: 14px 20px;
+      margin-bottom: 44px;
+    }
+    .pub-info { font-size: .82rem; color: var(--muted); }
+    .pub-info.on { color: var(--gold); }
+    .btn-pub {
+      background: var(--gold); color: #000;
+      border: none; padding: 9px 22px;
+      border-radius: 8px; font-weight: 600;
+      font-size: .85rem; cursor: pointer;
+      white-space: nowrap; transition: .15s;
+      font-family: inherit;
+    }
+    .btn-pub:hover  { background: var(--gold-light); }
+    .btn-pub:disabled {
+      background: var(--dark5); color: var(--muted); cursor: not-allowed;
+    }
+
+    /* ── Filters ── */
+    .filters {
+      display: flex; gap: 8px; flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+    .ftab {
+      background: var(--dark3);
+      border: 1px solid var(--dark5);
+      color: var(--muted);
+      padding: 5px 15px; border-radius: 20px;
+      font-size: .78rem; cursor: pointer; transition: .15s;
+      font-family: inherit;
+    }
+    .ftab.on {
+      background: rgba(200,164,90,.12);
+      border-color: var(--gold); color: var(--gold);
+    }
+
+    /* ── Portfolio grid ── */
+    #pgrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+      gap: 8px;
+    }
+    .p-cell {
+      position: relative; border-radius: 10px;
+      overflow: hidden; aspect-ratio: 4/5;
+      background: var(--dark3);
+      border: 1px solid var(--dark5);
+    }
+    .p-cell img,
+    .p-cell video {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
+    }
+    .p-overlay {
+      position: absolute; inset: 0;
+      background: transparent;
+      transition: background .2s;
+      display: flex; align-items: flex-start;
+      justify-content: flex-end; padding: 8px;
+    }
+    .p-cell:hover .p-overlay { background: rgba(0,0,0,.45); }
+    .p-del {
+      background: rgba(180,30,30,.9);
+      border: none; color: #fff;
+      width: 28px; height: 28px;
+      border-radius: 50%; cursor: pointer;
+      font-size: 16px; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity .15s;
+    }
+    .p-cell:hover .p-del { opacity: 1; }
+    .p-type {
+      position: absolute; top: 7px; left: 7px;
+      font-size: .62rem; font-weight: 500;
+      background: rgba(0,0,0,.6);
+      padding: 2px 6px; border-radius: 4px;
+      color: var(--muted);
+    }
+    .p-cat {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 20px 8px 7px;
+      background: linear-gradient(transparent, rgba(0,0,0,.75));
+      font-size: .65rem; font-weight: 600;
+      letter-spacing: .5px; text-transform: uppercase;
+      color: var(--gold);
+    }
+    .empty {
+      grid-column: 1/-1; text-align: center;
+      padding: 60px 20px; color: var(--muted);
+    }
+
+    /* ── Count badge ── */
+    .count-badge {
+      background: rgba(200,164,90,.15);
+      color: var(--gold);
+      border-radius: 20px;
+      padding: 2px 10px;
+      font-size: .72rem;
+      font-weight: 500;
+      margin-left: 4px;
+    }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed; bottom: 28px; left: 50%;
+      transform: translateX(-50%) translateY(70px);
+      background: var(--dark3);
+      border: 1px solid rgba(200,164,90,.25);
+      color: var(--text);
+      padding: 11px 22px; border-radius: 10px;
+      font-size: .85rem; transition: transform .28s ease;
+      z-index: 999; white-space: nowrap; pointer-events: none;
+    }
+    #toast.show  { transform: translateX(-50%) translateY(0); }
+    #toast.ok    { border-color: #4caf50; color: #81c784; }
+    #toast.err   { border-color: #e53935; color: #ef9a9a; }
+  </style>
 </head>
 <body>
-  <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+
+<!-- Loading -->
+<div id="loading">
+  <div class="spinner"></div>
+  <p style="color:var(--muted);font-size:.85rem">Autenticando…</p>
+</div>
+
+<!-- App -->
+<div id="app">
+  <header>
+    <div class="h-logo">OLD <em>ART</em> STUDIO <span>— PAINEL</span></div>
+    <div class="h-right">
+      <span class="h-email" id="uEmail"></span>
+      <button class="btn-sm" onclick="netlifyIdentity.logout()">Sair</button>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ── Upload ── -->
+    <div class="sec-head">Adicionar Mídia</div>
+    <div class="upload-wrap">
+      <div class="drop-zone" id="dropZone">
+        <div class="drop-icon">📸</div>
+        <h3>Arraste fotos ou vídeos aqui</h3>
+        <p>ou clique para selecionar · JPG · WEBP · MP4</p>
+      </div>
+      <input type="file" id="fileInput" multiple accept=".jpg,.jpeg,.webp,.mp4,image/jpeg,image/webp,video/mp4"/>
+    </div>
+
+    <div id="queue"></div>
+
+    <!-- ── Publish bar ── -->
+    <div class="pub-bar">
+      <div class="pub-info" id="pubInfo">Nenhuma alteração pendente.</div>
+      <button class="btn-pub" id="pubBtn" disabled onclick="publish()">✓ Publicar Alterações</button>
+    </div>
+
+    <!-- ── Portfolio ── -->
+    <div class="sec-head">
+      Portfolio Atual
+      <span class="count-badge" id="countBadge">0</span>
+    </div>
+
+    <div class="filters">
+      <button class="ftab on" data-cat="all">Todos</button>
+      <button class="ftab" data-cat="pretoecinza">🖤 Preto e Cinza</button>
+      <button class="ftab" data-cat="fineline">✒️ Fine Line</button>
+      <button class="ftab" data-cat="colorido">🎨 Colorido</button>
+      <button class="ftab" data-cat="comercial">🏷️ Comercial</button>
+    </div>
+
+    <div id="pgrid"></div>
+
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ─── Constants ─── */
+const CAT = {
+  pretoecinza: 'Preto e Cinza',
+  fineline:    'Fine Line',
+  colorido:    'Colorido',
+  comercial:   'Comercial',
+};
+
+/* ─── State ─── */
+let items      = [];   // portfolio.json items (mutable)
+let pSha       = null; // sha of portfolio.json in git
+let queue      = [];   // { file, type, cat, objUrl }
+let filter     = 'all';
+let dirty      = false;
+
+/* ─── Auth ─── */
+netlifyIdentity.init();
+
+netlifyIdentity.on('init', u => u ? boot(u) : netlifyIdentity.open('login'));
+netlifyIdentity.on('login', u => boot(u));
+netlifyIdentity.on('logout', () => {
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loading').style.display = 'flex';
+  netlifyIdentity.open('login');
+});
+
+async function tok() {
+  return netlifyIdentity.currentUser().jwt(true);
+}
+
+/* ─── Boot ─── */
+async function boot(u) {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('uEmail').textContent = u.email;
+  setupDrop();
+  setupFilters();
+  await loadPortfolio();
+}
+
+/* ─── API ─── */
+async function apiGet(path) {
+  const r = await fetch(`/.netlify/git/github/contents/${path}`, {
+    headers: { Authorization: `Bearer ${await tok()}` }
+  });
+  if (!r.ok) throw new Error(`Erro ${r.status} ao ler ${path}`);
+  return r.json();
+}
+
+async function apiPutText(path, text, sha, msg) {
+  const body = { message: msg, content: btoa(unescape(encodeURIComponent(text))) };
+  if (sha) body.sha = sha;
+  const r = await fetch(`/.netlify/git/github/contents/${path}`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${await tok()}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.message || `Erro ${r.status}`);
+  return j;
+}
+
+async function apiPutBin(path, buf, sha, msg) {
+  let bin = '', bytes = new Uint8Array(buf);
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  const body = { message: msg, content: btoa(bin) };
+  if (sha) body.sha = sha;
+  const r = await fetch(`/.netlify/git/github/contents/${path}`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${await tok()}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.message || `Erro ${r.status}`);
+  return j;
+}
+
+/* ─── Load ─── */
+async function loadPortfolio() {
+  toast('Carregando portfolio…');
+  try {
+    const d = await apiGet('portfolio.json');
+    pSha = d.sha;
+    const json = JSON.parse(decodeURIComponent(escape(atob(d.content.replace(/\n/g,'')))));
+    items = json.items || [];
+    renderGrid();
+    toast('');
+  } catch(e) {
+    items = [];
+    renderGrid();
+    toast('Erro ao carregar: ' + e.message, 'err');
+  }
+}
+
+/* ─── Grid ─── */
+function renderGrid() {
+  const grid = document.getElementById('pgrid');
+  const vis  = filter === 'all' ? items : items.filter(it => it.categoria === filter);
+
+  document.getElementById('countBadge').textContent =
+    filter === 'all' ? items.length : `${vis.length} / ${items.length}`;
+
+  grid.innerHTML = '';
+  if (!vis.length) {
+    grid.innerHTML = '<div class="empty">Nenhum item nesta categoria.</div>';
+    return;
+  }
+
+  vis.forEach(item => {
+    const gi  = items.indexOf(item);
+    const url = '/' + item.s.replace(/^\//, '');
+    const div = document.createElement('div');
+    div.className = 'p-cell';
+
+    if (item.t === 'v') {
+      const v = document.createElement('video');
+      v.src = url; v.muted = true; v.preload = 'metadata';
+      div.appendChild(v);
+      div.addEventListener('mouseenter', () => v.play().catch(()=>{}));
+      div.addEventListener('mouseleave', () => { v.pause(); v.currentTime = 0; });
+    } else {
+      const img = document.createElement('img');
+      img.src = url; img.alt = item.categoria; img.loading = 'lazy';
+      div.appendChild(img);
+    }
+
+    const ov  = document.createElement('div'); ov.className = 'p-overlay';
+    const del = document.createElement('button'); del.className = 'p-del';
+    del.innerHTML = '&times;'; del.title = 'Remover do portfolio';
+    del.onclick = () => removeItem(gi);
+    ov.appendChild(del);
+    div.appendChild(ov);
+
+    const tp = document.createElement('div'); tp.className = 'p-type';
+    tp.textContent = item.t === 'v' ? '▶ vídeo' : '🖼 foto';
+    div.appendChild(tp);
+
+    const ct = document.createElement('div'); ct.className = 'p-cat';
+    ct.textContent = CAT[item.categoria] || item.categoria;
+    div.appendChild(ct);
+
+    grid.appendChild(div);
+  });
+}
+
+function removeItem(idx) {
+  if (!confirm('Remover este item do portfolio?')) return;
+  items.splice(idx, 1);
+  markDirty(`${items.length} itens`);
+  renderGrid();
+}
+
+/* ─── Drop / Upload ─── */
+function setupDrop() {
+  const zone  = document.getElementById('dropZone');
+  const input = document.getElementById('fileInput');
+
+  zone.onclick = () => input.click();
+
+  zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('over');
+    addFiles(e.dataTransfer.files);
+  });
+  input.addEventListener('change', () => { addFiles(input.files); input.value = ''; });
+}
+
+function addFiles(files) {
+  Array.from(files).forEach(f => {
+    const ext  = f.name.split('.').pop().toLowerCase();
+    const type = ext === 'mp4' ? 'v' : 'i';
+    queue.push({ file: f, type, cat: 'pretoecinza', objUrl: URL.createObjectURL(f) });
+  });
+  renderQueue();
+  markDirty(`${queue.length} arquivo(s) na fila`);
+}
+
+function renderQueue() {
+  const el = document.getElementById('queue');
+  el.innerHTML = '';
+  queue.forEach((item, i) => {
+    const card = document.createElement('div'); card.className = 'q-card';
+
+    if (item.type === 'v') {
+      const v = document.createElement('video');
+      v.src = item.objUrl; v.className = 'q-thumb';
+      v.muted = true; v.preload = 'metadata';
+      card.appendChild(v);
+    } else {
+      const img = document.createElement('img');
+      img.src = item.objUrl; img.className = 'q-thumb'; img.alt = '';
+      card.appendChild(img);
+    }
+
+    const body = document.createElement('div'); body.className = 'q-body';
+
+    const name = document.createElement('div'); name.className = 'q-name';
+    name.textContent = item.file.name; body.appendChild(name);
+
+    const sel = document.createElement('select'); sel.className = 'q-select';
+    Object.entries(CAT).forEach(([val, label]) => {
+      const opt = document.createElement('option');
+      opt.value = val; opt.textContent = label;
+      if (val === item.cat) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    sel.addEventListener('change', () => { queue[i].cat = sel.value; });
+    body.appendChild(sel); card.appendChild(body);
+
+    const rm = document.createElement('button'); rm.className = 'q-rm';
+    rm.innerHTML = '&times;'; rm.onclick = () => removeFromQueue(i);
+    card.appendChild(rm);
+
+    el.appendChild(card);
+  });
+}
+
+function removeFromQueue(i) {
+  URL.revokeObjectURL(queue[i].objUrl);
+  queue.splice(i, 1);
+  renderQueue();
+  if (!queue.length && !dirty) markClean();
+  else markDirty(`${queue.length} arquivo(s) na fila`);
+}
+
+/* ─── Publish ─── */
+async function publish() {
+  const btn = document.getElementById('pubBtn');
+  btn.disabled = true; btn.textContent = 'Publicando…';
+
+  try {
+    for (const it of queue) {
+      const fname = sanitize(it.file.name);
+      const path  = `fotos/${fname}`;
+      toast(`Enviando ${fname}…`);
+      const buf = await it.file.arrayBuffer();
+
+      // Check if file already exists (need sha to overwrite)
+      let existSha = null;
+      try { const ex = await apiGet(path); existSha = ex.sha; } catch(_) {}
+
+      await apiPutBin(path, buf, existSha, `Adiciona ${fname}`);
+      items.push({ s: `fotos/${fname}`, t: it.type, categoria: it.cat });
+    }
+
+    toast('Salvando portfolio.json…');
+    const result = await apiPutText(
+      'portfolio.json',
+      JSON.stringify({ items }, null, 2),
+      pSha,
+      'Atualiza portfolio via painel admin'
+    );
+    pSha = result.content.sha;
+
+    queue.forEach(it => URL.revokeObjectURL(it.objUrl));
+    queue = [];
+    document.getElementById('queue').innerHTML = '';
+
+    dirty = false;
+    btn.textContent = '✓ Publicar Alterações';
+    markClean();
+    renderGrid();
+    toast('Publicado! O site atualiza em ~30s ✓', 'ok');
+
+  } catch(e) {
+    console.error(e);
+    toast('Erro: ' + e.message, 'err');
+    btn.disabled = false;
+    btn.textContent = '✓ Publicar Alterações';
+  }
+}
+
+function sanitize(name) {
+  return name
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '_')
+    .replace(/[^a-zA-Z0-9._-]/g, '');
+}
+
+/* ─── Filters ─── */
+function setupFilters() {
+  document.querySelectorAll('.ftab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.ftab').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      filter = btn.dataset.cat;
+      renderGrid();
+    });
+  });
+}
+
+/* ─── Status ─── */
+function markDirty(msg) {
+  dirty = true;
+  const el = document.getElementById('pubInfo');
+  el.textContent = `${msg} — aguardando publicação`;
+  el.className = 'pub-info on';
+  const btn = document.getElementById('pubBtn');
+  btn.disabled = false;
+  btn.textContent = '✓ Publicar Alterações';
+}
+function markClean() {
+  dirty = false;
+  document.getElementById('pubInfo').textContent = 'Nenhuma alteração pendente.';
+  document.getElementById('pubInfo').className = 'pub-info';
+  document.getElementById('pubBtn').disabled = true;
+}
+
+/* ─── Toast ─── */
+let tTimer;
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  if (!msg) { el.className = ''; return; }
+  el.textContent = msg;
+  el.className = 'show' + (type ? ' ' + type : '');
+  clearTimeout(tTimer);
+  if (type) tTimer = setTimeout(() => el.className = '', 4000);
+}
+</script>
 </body>
 </html>
