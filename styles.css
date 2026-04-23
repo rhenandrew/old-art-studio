@@ -684,6 +684,12 @@ h1, h2, h3, h4 { font-family: 'Cinzel', serif; line-height: 1.15; }
 }
 .footer-bottom p { color: var(--gray); font-size: .82rem; }
 .footer-dev { color: rgba(200,164,90,.4) !important; }
+.footer-dev-link {
+  color: rgba(200,164,90,.55);
+  text-decoration: none;
+  transition: color var(--trans);
+}
+.footer-dev-link:hover { color: var(--gold); }
 
 /* ===== WHATSAPP FLOAT ===== */
 .wa-float-wrap {
