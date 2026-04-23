@@ -1,0 +1,20 @@
+# Sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+*.swp
+*.swo
+
+# Python (gerador de relatórios)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+
+# Docs gerados (não versionar saída, só o script)
+Relatório Final - PREENCHIDO.docx
+PDCA - PREENCHIDO.docx
