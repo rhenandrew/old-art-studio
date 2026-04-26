@@ -463,7 +463,10 @@ function renderGrid() {
 
     if (item.t === 'v') {
       const v = document.createElement('video');
-      v.src = url; v.muted = true; v.preload = 'metadata';
+      v.setAttribute('muted', '');
+      v.setAttribute('playsinline', '');
+      v.muted = true; v.preload = 'metadata';
+      v.src = url;
       div.appendChild(v);
       div.addEventListener('mouseenter', () => v.play().catch(()=>{}));
       div.addEventListener('mouseleave', () => { v.pause(); v.currentTime = 0; });
@@ -533,8 +536,10 @@ function renderQueue() {
 
     if (item.type === 'v') {
       const v = document.createElement('video');
-      v.src = item.objUrl; v.className = 'q-thumb';
+      v.setAttribute('muted', '');
+      v.setAttribute('playsinline', '');
       v.muted = true; v.preload = 'metadata';
+      v.src = item.objUrl; v.className = 'q-thumb';
       card.appendChild(v);
     } else {
       const img = document.createElement('img');

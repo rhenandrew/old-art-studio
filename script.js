@@ -79,11 +79,13 @@ async function loadPortfolio() {
     let el;
     if (item.t === 'v') {
       el = document.createElement('video');
-      el.src         = item.s;
-      el.autoplay    = true;
-      el.muted       = true;
-      el.loop        = true;
-      el.playsInline = true;
+      // iOS Safari exige setAttribute para muted/playsinline funcionarem
+      el.setAttribute('autoplay', '');
+      el.setAttribute('muted', '');
+      el.setAttribute('loop', '');
+      el.setAttribute('playsinline', '');
+      el.muted = true; // necessário também como propriedade para alguns browsers
+      el.src   = item.s;
     } else {
       el = document.createElement('img');
       el.src = item.s;
